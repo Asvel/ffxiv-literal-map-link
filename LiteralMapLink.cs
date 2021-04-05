@@ -21,6 +21,20 @@ namespace LiteralMapLink
         private Hook<ParseMessageDelegate> parseMessageHook;
 
         private readonly Dictionary<string, (uint, uint)> maps = new();
+        private readonly Dictionary<string, string> unmaskedMapNames = new()
+        {
+            { "狼狱演*场", "狼狱演习场" },
+            { "魔**阿济兹拉", "魔大陆阿济兹拉" },
+            { "玛托雅的洞*", "玛托雅的洞穴" },
+            { "魔**中枢", "魔大陆中枢" },
+            { "双蛇*军营", "双蛇党军营" },
+            { "地衣宫演*场", "地衣宫演习场" },
+            { "水晶塔演*场", "水晶塔演习场" },
+            { "*泉神社", "醴泉神社" },
+            { "*泉神社神道", "醴泉神社神道" },
+            { "格**火山", "格鲁格火山" },
+            { "**亚马乌罗提", "末日亚马乌罗提" },
+        };
 
         private readonly Regex mapLinkPattern = new(
             @"\uE0BB(?<map>.+?) \( (?<x>\d{1,2}\.\d)  , (?<y>\d{1,2}\.\d) \)",
@@ -31,7 +45,7 @@ namespace LiteralMapLink
         private readonly FieldInfo mapIdField = typeof(MapLinkPayload).GetField("mapId",
             BindingFlags.NonPublic | BindingFlags.Instance);
 
-        private readonly Dictionary<(uint, uint, int, int), (int, int)> historyCoordinates = new();
+        private readonly Dictionary<string, (uint, uint, int, int)> historyCoordinates = new();
 
         public string Name => "Literal Map Link";
 
@@ -54,17 +68,6 @@ namespace LiteralMapLink
                     this.maps.Add(name, (territoryType.RowId, territoryType.Map.Row));
                 }
             }
-            if (this.maps.TryGetValue("狼狱演习场", out var map)) this.maps.Add("狼狱演*场", map);
-            if (this.maps.TryGetValue("魔大陆阿济兹拉", out map)) this.maps.Add("魔**阿济兹拉", map);
-            if (this.maps.TryGetValue("玛托雅的洞穴", out map)) this.maps.Add("玛托雅的洞*", map);
-            if (this.maps.TryGetValue("魔大陆中枢", out map)) this.maps.Add("魔**中枢", map);
-            if (this.maps.TryGetValue("双蛇党军营", out map)) this.maps.Add("双蛇*军营", map);
-            if (this.maps.TryGetValue("地衣宫演习场", out map)) this.maps.Add("地衣宫演*场", map);
-            if (this.maps.TryGetValue("水晶塔演习场", out map)) this.maps.Add("水晶塔演*场", map);
-            if (this.maps.TryGetValue("醴泉神社", out map)) this.maps.Add("*泉神社", map);
-            if (this.maps.TryGetValue("醴泉神社神道", out map)) this.maps.Add("*泉神社神道", map);
-            if (this.maps.TryGetValue("格鲁格火山", out map)) this.maps.Add("格**火山", map);
-            if (this.maps.TryGetValue("末日亚马乌罗提", out map)) this.maps.Add("**亚马乌罗提", map);
         }
 
         private IntPtr HandleParseMessageDetour(IntPtr a, IntPtr b)
@@ -92,31 +95,33 @@ namespace LiteralMapLink
                     if (!(parsed.Payloads[i] is TextPayload payload)) continue;
                     var match = mapLinkPattern.Match(payload.Text);
                     if (!match.Success) continue;
-                    if (!this.maps.TryGetValue(match.Groups["map"].Value, out var mapInfo))
-                    {
-                        PluginLog.Warning("Can't find map {0}", match.Groups["map"].Value);
-                        continue;
-                    }
 
-                    var (territoryId, mapId) = mapInfo;
-                    var inputX = float.Parse(match.Groups["x"].Value) + 1e-5f;
-                    var inputY = float.Parse(match.Groups["y"].Value) + 1e-5f;
-                    var historyKey = (territoryId, mapId, (int)(inputX * 10.0f), (int)(inputY * 10.0f));
+                    var mapName = match.Groups["map"].Value;
+                    unmaskedMapNames.TryGetValue(mapName, out mapName);
+                    var historyKey = mapName + match.Value.Substring(mapName.Length + 1);
+
+                    uint territoryId, mapId;
                     int rawX, rawY;
                     if (this.historyCoordinates.TryGetValue(historyKey, out var history))
                     {
-                        PluginLog.Log("{0} found {1}", historyKey, history);
-                        (rawX, rawY) = history;
+                        (territoryId, mapId, rawX, rawY) = history;
+                        PluginLog.Log("recall {0} => {1}", historyKey, history);
                     }
                     else
                     {
-                        PluginLog.Log("{0} not found", historyKey);
+                        if (!this.maps.TryGetValue(mapName, out var mapInfo))
+                        {
+                            PluginLog.Warning("Can't find map {0}", mapName);
+                            continue;
+                        }
+                        (territoryId, mapId) = mapInfo;
                         var map = this.pluginInterface.Data.GetExcelSheet<Map>().GetRow(mapId);
-                        rawX = this.GenerateRawPosition(inputX, map.OffsetX, map.SizeFactor);
-                        rawY = this.GenerateRawPosition(inputY, map.OffsetY, map.SizeFactor);
-                        this.historyCoordinates[historyKey] = (rawX, rawY);
+                        rawX = this.GenerateRawPosition(float.Parse(match.Groups["x"].Value), map.OffsetX, map.SizeFactor);
+                        rawY = this.GenerateRawPosition(float.Parse(match.Groups["y"].Value), map.OffsetY, map.SizeFactor);
+                        history = (territoryId, mapId, rawX, rawY);
+                        this.historyCoordinates[historyKey] = history;
+                        PluginLog.Log("generate {0} => {1}", historyKey, history);
                     }
-                    PluginLog.Log("{0} => {1:X} {2:X} ({3},{4})", match.Value, territoryId, mapId, rawX, rawY);
 
                     var newPayloads = new List<Payload>();
                     if (match.Index > 0)
@@ -148,20 +153,19 @@ namespace LiteralMapLink
 
         private void HandleChatMessage(XivChatType type, uint senderId, ref SeString sender, ref SeString message, ref bool isHandled)
         {
-            foreach (var payload in message.Payloads)
+            for (var i = 0; i < message.Payloads.Count; i++)
             {
-                if (payload is MapLinkPayload p)
-                {
-                    var territoryId = (uint)territoryTypeIdField.GetValue(p);
-                    var mapId = (uint)mapIdField.GetValue(p);
-                    this.maps[p.PlaceName] = (territoryId, mapId);
-                    var visibleX = (int)((p.XCoord + 1e-5f) * 10.0f);
-                    var visibleY = (int)((p.YCoord + 1e-5f) * 10.0f);
-                    this.historyCoordinates[(territoryId, mapId, visibleX, visibleY)] = (p.RawX, p.RawY);
-                    PluginLog.Log("memorize ({0},{1},{2},{3}) => ({4},{5})", territoryId, mapId, visibleX, visibleY, p.RawX, p.RawY);
-                    //PluginLog.Log(BitConverter.ToString(p.Encode()));
-                    //PluginLog.Log(BitConverter.ToString(p.Encode(true)));
-                }
+                if (!(message.Payloads[i] is MapLinkPayload payload)) continue;
+                if (!(message.Payloads[i + 6] is TextPayload payloadText)) continue;
+                var territoryId = (uint)territoryTypeIdField.GetValue(payload);
+                var mapId = (uint)mapIdField.GetValue(payload);
+                this.maps[payloadText.Text.Substring(0, payloadText.Text.LastIndexOf("(") - 1)] = (territoryId, mapId);
+                var historyKey = payloadText.Text.Substring(0, payloadText.Text.LastIndexOf(")") + 1);
+                var history = (territoryId, mapId, payload.RawX, payload.RawY);
+                this.historyCoordinates[historyKey] = history;
+                PluginLog.Log("memorize {0} => {1}", historyKey, history);
+                //PluginLog.Log(BitConverter.ToString(payload.Encode()));
+                //PluginLog.Log(BitConverter.ToString(payload.Encode(true)));
             }
         }
 
