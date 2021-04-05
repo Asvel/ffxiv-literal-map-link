@@ -160,11 +160,32 @@ namespace LiteralMapLink
             {
                 if (!(message.Payloads[i] is MapLinkPayload payload)) continue;
                 if (!(message.Payloads[i + 6] is TextPayload payloadText)) continue;
-                var territoryId = (uint)territoryTypeIdField.GetValue(payload);
-                var mapId = (uint)mapIdField.GetValue(payload);
+
+                // FIXME: use dalamud parsed values when it fixed
+                var reader = new System.IO.BinaryReader(new System.IO.MemoryStream(payload.Encode()));
+                reader.ReadBytes(4);
+                uint GetInteger()
+                {
+                    uint marker = reader.ReadByte();
+                    if (marker < 0xF0) return marker - 1;
+                    marker = (marker + 1) & 0b1111;
+                    var ret = new byte[4];
+                    for (var i = 3; i >= 0; i--)
+                    {
+                        ret[i] = (marker & (1 << i)) == 0 ? (byte)0 : reader.ReadByte();
+                    }
+                    return BitConverter.ToUInt32(ret, 0);
+                }
+                var territoryAndMap = BitConverter.GetBytes(GetInteger());
+                var territoryId = BitConverter.ToUInt16(territoryAndMap, 2);
+                var mapId = BitConverter.ToUInt16(territoryAndMap, 0);
+                var history = (territoryId, mapId, unchecked((int)GetInteger()), unchecked((int)GetInteger()));
+
+                //var territoryId = (uint)territoryTypeIdField.GetValue(payload);
+                //var mapId = (uint)mapIdField.GetValue(payload);
                 this.maps[payloadText.Text.Substring(0, payloadText.Text.LastIndexOf("(") - 1)] = (territoryId, mapId);
                 var historyKey = payloadText.Text.Substring(0, payloadText.Text.LastIndexOf(")") + 1);
-                var history = (territoryId, mapId, payload.RawX, payload.RawY);
+                //var history = (territoryId, mapId, payload.RawX, payload.RawY);
                 this.historyCoordinates[historyKey] = history;
                 PluginLog.Log("memorize {0} => {1}", historyKey, history);
                 //PluginLog.Log(BitConverter.ToString(payload.Encode()));
