@@ -97,7 +97,10 @@ namespace LiteralMapLink
                     if (!match.Success) continue;
 
                     var mapName = match.Groups["map"].Value;
-                    unmaskedMapNames.TryGetValue(mapName, out mapName);
+                    if (unmaskedMapNames.ContainsKey(mapName))
+                    {
+                        mapName = unmaskedMapNames[mapName];
+                    }
                     var historyKey = mapName + match.Value.Substring(mapName.Length + 1);
 
                     uint territoryId, mapId;

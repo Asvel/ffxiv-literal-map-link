@@ -27,13 +27,7 @@ namespace LiteralMapLink
         protected override byte[] EncodeImpl()
         {
             var territoryBytes = MakeInteger(this.territoryTypeId);
-            var mapBytes = MakeInteger(this.mapId);
-            if (territoryBytes.Length == 2 && mapBytes.Length == 2)
-            {
-                territoryBytes = new byte[] { territoryBytes[1] };
-                mapBytes = new byte[] { mapBytes[1] };
-            }
-
+            var mapBytes = MakeInteger(this.mapId);            
             var xBytes = MakeInteger(unchecked((uint)this.rawX));
             var yBytes = MakeInteger(unchecked((uint)this.rawY));
             var zBytes = MakeInteger(unchecked((uint)this.rawZ));
@@ -60,17 +54,37 @@ namespace LiteralMapLink
             throw new NotImplementedException();
         }
 
+        protected byte[] MakeInteger(uint value)
+        {
+            if (value < 0xCF)
+            {
+                return new byte[] { (byte)(value + 1) };
+            }
+
+            var bytes = BitConverter.GetBytes(value);
+
+            var ret = new List<byte>() { 0xF0 };
+            for (var i = 3; i >= 0; i--)
+            {
+                if (bytes[i] != 0)
+                {
+                    ret.Add(bytes[i]);
+                    ret[0] |= (byte)(1 << i);
+                }
+            }
+            ret[0] -= 1;
+
+            return ret.ToArray();
+        }
+
+        protected override byte[] MakeInteger(uint value, bool withMarker = true, bool incrementSmallInts = true)
+        {
+            throw new NotImplementedException();
+        }
+
         protected override byte GetMarkerForIntegerBytes(byte[] bytes)
         {
-            var type = bytes.Length switch
-            {
-                3 => (byte)IntegerType.Int24Special,
-                2 => (byte)IntegerType.Int16,
-                1 => (byte)IntegerType.None,
-                _ => base.GetMarkerForIntegerBytes(bytes)
-            };
-
-            return type;
+            throw new NotImplementedException();
         }
     }
 }
