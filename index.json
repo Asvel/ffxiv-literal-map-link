@@ -3,7 +3,7 @@
         "Author": "Asvel",
         "Name": "Literal Map Link",
         "InternalName": "LiteralMapLink",
-        "Description": "Turn map coordinates literal into interactable map link when you post in-game chat messages.\n\nWARNING: currently it's only tested under Chinese version FFXIV client.",
+        "Description": "Turn map coordinates literal into interactable map link when you post in-game chat messages.\nWARNING: currently it's only tested under Chinese version FFXIV client.",
         "RepoUrl": "https://github.com/Asvel/ffxiv-literal-map-link",
         "AssemblyVersion": "1.0.0.0",
         "ApplicableVersion": "any",
