@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using Dalamud.Game.Chat.SeStringHandling;
+using Dalamud.Game.Text.SeStringHandling;
 
 namespace LiteralMapLink
 {
@@ -54,7 +54,7 @@ namespace LiteralMapLink
             throw new NotImplementedException();
         }
 
-        protected byte[] MakeInteger(uint value)
+        protected new byte[] MakeInteger(uint value)
         {
             if (value < 0xCF)
             {
@@ -75,16 +75,6 @@ namespace LiteralMapLink
             ret[0] -= 1;
 
             return ret.ToArray();
-        }
-
-        protected override byte[] MakeInteger(uint value, bool withMarker = true, bool incrementSmallInts = true)
-        {
-            throw new NotImplementedException();
-        }
-
-        protected override byte GetMarkerForIntegerBytes(byte[] bytes)
-        {
-            throw new NotImplementedException();
         }
     }
 }

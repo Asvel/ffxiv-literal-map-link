@@ -5,9 +5,9 @@ using System.Runtime.InteropServices;
 using System.Reflection;
 using Dalamud.Plugin;
 using Dalamud.Hooking;
-using Dalamud.Game.Chat;
-using Dalamud.Game.Chat.SeStringHandling;
-using Dalamud.Game.Chat.SeStringHandling.Payloads;
+using Dalamud.Game.Text;
+using Dalamud.Game.Text.SeStringHandling;
+using Dalamud.Game.Text.SeStringHandling.Payloads;
 using Lumina.Excel.GeneratedSheets;
 
 namespace LiteralMapLink
