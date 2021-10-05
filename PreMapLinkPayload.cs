@@ -53,28 +53,5 @@ namespace LiteralMapLink
         {
             throw new NotImplementedException();
         }
-
-        protected new byte[] MakeInteger(uint value)
-        {
-            if (value < 0xCF)
-            {
-                return new byte[] { (byte)(value + 1) };
-            }
-
-            var bytes = BitConverter.GetBytes(value);
-
-            var ret = new List<byte>() { 0xF0 };
-            for (var i = 3; i >= 0; i--)
-            {
-                if (bytes[i] != 0)
-                {
-                    ret.Add(bytes[i]);
-                    ret[0] |= (byte)(1 << i);
-                }
-            }
-            ret[0] -= 1;
-
-            return ret.ToArray();
-        }
     }
 }
