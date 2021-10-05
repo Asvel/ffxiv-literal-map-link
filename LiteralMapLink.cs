@@ -3,18 +3,37 @@ using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using System.Runtime.InteropServices;
 using System.Reflection;
-using Dalamud.Plugin;
-using Dalamud.Hooking;
+using Dalamud.Data;
+using Dalamud.Game;
+using Dalamud.Game.Gui;
 using Dalamud.Game.Text;
 using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Game.Text.SeStringHandling.Payloads;
+using Dalamud.Hooking;
+using Dalamud.IoC;
+using Dalamud.Logging;
+using Dalamud.Plugin;
 using Lumina.Excel.GeneratedSheets;
 
 namespace LiteralMapLink
 {
     public class LiteralMapLink : IDalamudPlugin
     {
-        private DalamudPluginInterface pluginInterface;
+        [PluginService]
+        [RequiredVersion("1.0")]
+        private DalamudPluginInterface PluginInterface { get; init; }
+
+        [PluginService]
+        [RequiredVersion("1.0")]
+        private SigScanner SigScanner { get; init; }
+
+        [PluginService]
+        [RequiredVersion("1.0")]
+        private ChatGui Chat { get; init; }
+
+        [PluginService]
+        [RequiredVersion("1.0")]
+        private DataManager Data { get; init; }
 
         [UnmanagedFunctionPointer(CallingConvention.ThisCall)]
         private delegate IntPtr ParseMessageDelegate(IntPtr a, IntPtr b);
@@ -49,18 +68,16 @@ namespace LiteralMapLink
 
         public string Name => "Literal Map Link";
 
-        public void Initialize(DalamudPluginInterface pluginInterface)
+        public LiteralMapLink()
         {
-            this.pluginInterface = pluginInterface;
-
-            var parseMessageAddress = this.pluginInterface.TargetModuleScanner.ScanText(
+            var parseMessageAddress = this.SigScanner.ScanText(
                 "E8 ???????? 48 8B D0 48 8D 4C 24 30 E8 ???????? 48 8B 44 24 30 80 38 00 0F 84");
-            this.parseMessageHook = new(parseMessageAddress, new ParseMessageDelegate(HandleParseMessageDetour), this);
+            this.parseMessageHook = new(parseMessageAddress, new ParseMessageDelegate(HandleParseMessageDetour));
             this.parseMessageHook.Enable();
 
-            this.pluginInterface.Framework.Gui.Chat.OnChatMessage += HandleChatMessage;
+            this.Chat.ChatMessage += HandleChatMessage;
 
-            foreach (var territoryType in this.pluginInterface.Data.GetExcelSheet<TerritoryType>())
+            foreach (var territoryType in this.Data.GetExcelSheet<TerritoryType>())
             {
                 var name = territoryType.PlaceName.Value.Name.RawString;
                 if (name != "" && !this.maps.ContainsKey(name))
@@ -81,12 +98,12 @@ namespace LiteralMapLink
                 var message = new byte[length];
                 Marshal.Copy(pMessage, message, 0, length);
 
-                var parsed = this.pluginInterface.SeStringManager.Parse(message);
+                var parsed = SeString.Parse(message);
                 foreach (var payload in parsed.Payloads)
                 {
                     if (payload is AutoTranslatePayload p && p.Encode()[3] == 0xC9 && p.Encode()[4] == 0x04)
                     {
-                        if (this.pluginInterface.IsDebugging) PluginLog.Log("<- {0}", BitConverter.ToString(message));
+                        if (this.PluginInterface.IsDebugging) PluginLog.Log("<- {0}", BitConverter.ToString(message));
                         return ret;
                     }
                 }
@@ -118,7 +135,7 @@ namespace LiteralMapLink
                             continue;
                         }
                         (territoryId, mapId) = mapInfo;
-                        var map = this.pluginInterface.Data.GetExcelSheet<Map>().GetRow(mapId);
+                        var map = this.Data.GetExcelSheet<Map>().GetRow(mapId);
                         rawX = this.GenerateRawPosition(float.Parse(match.Groups["x"].Value), map.OffsetX, map.SizeFactor);
                         rawY = this.GenerateRawPosition(float.Parse(match.Groups["y"].Value), map.OffsetY, map.SizeFactor);
                         history = (territoryId, mapId, rawX, rawY);
@@ -140,7 +157,7 @@ namespace LiteralMapLink
                     parsed.Payloads.InsertRange(i, newPayloads);
 
                     var newMessage = parsed.Encode();
-                    if (this.pluginInterface.IsDebugging) PluginLog.Log("-> {0}", BitConverter.ToString(newMessage));
+                    if (this.PluginInterface.IsDebugging) PluginLog.Log("-> {0}", BitConverter.ToString(newMessage));
                     Marshal.Copy(newMessage, 0, pMessage, newMessage.Length);
                     Marshal.WriteByte(pMessage, newMessage.Length, 0x00);
 
@@ -158,8 +175,8 @@ namespace LiteralMapLink
         {
             for (var i = 0; i < message.Payloads.Count; i++)
             {
-                if (!(message.Payloads[i] is MapLinkPayload payload)) continue;
-                if (!(message.Payloads[i + 6] is TextPayload payloadText)) continue;
+                if (message.Payloads[i] is not MapLinkPayload payload) continue;
+                if (message.Payloads[i + 6] is not TextPayload payloadText) continue;
 
                 // FIXME: use dalamud parsed values when it fixed
                 var reader = new System.IO.BinaryReader(new System.IO.MemoryStream(payload.Encode()));
@@ -198,8 +215,7 @@ namespace LiteralMapLink
         {
             if (!disposing) return;
             this.parseMessageHook.Dispose();
-            this.pluginInterface.Framework.Gui.Chat.OnChatMessage -= HandleChatMessage;
-            this.pluginInterface.Dispose();
+            this.Chat.ChatMessage -= HandleChatMessage;
         }
 
         public void Dispose()
