@@ -2,5 +2,6 @@
   "Name": "Literal Map Link",
   "Author": "Asvel",
   "Description": "Turn map coordinates literal into interactable map link when you post in-game chat messages.",
-  "RepoUrl": "https://github.com/Asvel/ffxiv-literal-map-link"
+  "RepoUrl": "https://github.com/Asvel/ffxiv-literal-map-link",
+  "Tags": ["Chat", "Utility"]
 }

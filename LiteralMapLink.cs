@@ -53,6 +53,7 @@ namespace LiteralMapLink
             { "*泉神社神道", "醴泉神社神道" },
             { "格**火山", "格鲁格火山" },
             { "**亚马乌罗提", "末日亚马乌罗提" },
+            { "游末邦**", "游末邦监狱" },
         };
 
         private readonly Regex mapLinkPattern = new(
