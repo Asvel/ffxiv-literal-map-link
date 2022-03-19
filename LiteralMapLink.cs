@@ -57,7 +57,7 @@ namespace LiteralMapLink
         };
 
         private readonly Regex mapLinkPattern = new(
-            @"\uE0BB(?<map>.+?) \( (?<x>\d{1,2}\.\d)  , (?<y>\d{1,2}\.\d) \)",
+            @"\uE0BB(?<map>.+?)(?<instance>[\ue0b1-\ue0b9])? \( (?<x>\d{1,2}\.\d)  , (?<y>\d{1,2}\.\d) \)",
             RegexOptions.Compiled);
 
         private readonly FieldInfo territoryTypeIdField = typeof(MapLinkPayload).GetField("territoryTypeId",
@@ -139,6 +139,10 @@ namespace LiteralMapLink
                         var map = this.Data.GetExcelSheet<Map>().GetRow(mapId);
                         rawX = this.GenerateRawPosition(float.Parse(match.Groups["x"].Value), map.OffsetX, map.SizeFactor);
                         rawY = this.GenerateRawPosition(float.Parse(match.Groups["y"].Value), map.OffsetY, map.SizeFactor);
+                        if (match.Groups["instance"].Value != "")
+                        {
+                            mapId |= (match.Groups["instance"].Value[0] - 0xe0b0u) << 16;
+                        }
                         history = (territoryId, mapId, rawX, rawY);
                         this.historyCoordinates[historyKey] = history;
                         PluginLog.Log("generate {0} => {1}", historyKey, history);
@@ -181,8 +185,17 @@ namespace LiteralMapLink
 
                 var territoryId = (uint)territoryTypeIdField.GetValue(payload);
                 var mapId = (uint)mapIdField.GetValue(payload);
-                this.maps[payloadText.Text.Substring(0, payloadText.Text.LastIndexOf("(") - 1)] = (territoryId, mapId);
                 var historyKey = payloadText.Text.Substring(0, payloadText.Text.LastIndexOf(")") + 1);
+                var mapName = historyKey.Substring(0, historyKey.LastIndexOf("(") - 1);
+                if ('\ue0b1' <= mapName[^1] && mapName[^1] <= '\ue0b9')
+                {
+                    this.maps[mapName[0..^1]] = (territoryId, mapId);
+                    mapId |= (mapName[^1] - 0xe0b0u) << 16;
+                }
+                else
+                {
+                    this.maps[mapName] = (territoryId, mapId);
+                }
                 var history = (territoryId, mapId, payload.RawX, payload.RawY);
                 this.historyCoordinates[historyKey] = history;
                 PluginLog.Log("memorize {0} => {1}", historyKey, history);
