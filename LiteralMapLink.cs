@@ -163,6 +163,14 @@ namespace LiteralMapLink
 
                     var newMessage = parsed.Encode();
                     if (this.PluginInterface.IsDebugging) PluginLog.Log("-> {0}", BitConverter.ToString(newMessage));
+                    var messageCapacity = Marshal.ReadInt64(ret + 8);
+                    if (newMessage.Length + 1 > messageCapacity)
+                    {
+                        // FIXME: should call std::string#resize(or maybe _Reallocate_grow_by) here, but haven't found the signature yet
+                        PluginLog.LogError("Sorry, message capacity not enough, abort conversion for {0}", historyKey);
+                        return ret;
+                    }
+                    Marshal.WriteInt64(ret + 16, newMessage.Length + 1);
                     Marshal.Copy(newMessage, 0, pMessage, newMessage.Length);
                     Marshal.WriteByte(pMessage, newMessage.Length, 0x00);
 
