@@ -7,16 +7,16 @@
         "Description": "Turn map coordinates literal into interactable map link when you post in-game chat messages.\nWARNING: currently it's only tested under Chinese version FFXIV client.",
         "Tags": ["Chat", "Utility"],
         "RepoUrl": "https://github.com/Asvel/ffxiv-literal-map-link",
-        "AssemblyVersion": "1.1.1.0",
+        "AssemblyVersion": "1.1.2.0",
         "ApplicableVersion": "any",
         "DalamudApiLevel": 6,
         "IsHide": "False",
         "IsTestingExclusive": "False",
         "DownloadCount": 0,
         "CategoryTags": ["social", "utility"],
-        "LastUpdate": "1660114520",
-        "DownloadLinkInstall": "https://asvel.github.io/ffxiv-literal-map-link/1.1.1.0.zip",
-        "DownloadLinkTesting": "https://asvel.github.io/ffxiv-literal-map-link/1.1.1.0.zip",
-        "DownloadLinkUpdate": "https://asvel.github.io/ffxiv-literal-map-link/1.1.1.0.zip"
+        "LastUpdate": "1663640006",
+        "DownloadLinkInstall": "https://asvel.github.io/ffxiv-literal-map-link/1.1.2.0.zip",
+        "DownloadLinkTesting": "https://asvel.github.io/ffxiv-literal-map-link/1.1.2.0.zip",
+        "DownloadLinkUpdate": "https://asvel.github.io/ffxiv-literal-map-link/1.1.2.0.zip"
     }
 ]
