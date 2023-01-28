@@ -27,7 +27,7 @@ namespace LiteralMapLink
         protected override byte[] EncodeImpl()
         {
             var territoryBytes = MakeInteger(this.territoryTypeId);
-            var mapBytes = MakeInteger(this.mapId);            
+            var mapBytes = MakeInteger(this.mapId);
             var xBytes = MakeInteger(unchecked((uint)this.rawX));
             var yBytes = MakeInteger(unchecked((uint)this.rawY));
             var zBytes = MakeInteger(unchecked((uint)this.rawZ));

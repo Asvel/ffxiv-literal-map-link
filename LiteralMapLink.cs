@@ -73,7 +73,7 @@ namespace LiteralMapLink
         {
             var parseMessageAddress = this.SigScanner.ScanText(
                 "E8 ???????? 48 8B D0 48 8D 4C 24 30 E8 ???????? 48 8B 44 24 30 80 38 00 0F 84");
-            this.parseMessageHook = new(parseMessageAddress, new ParseMessageDelegate(HandleParseMessageDetour));
+            this.parseMessageHook = Hook<ParseMessageDelegate>.FromAddress(parseMessageAddress, new(HandleParseMessageDetour));
             this.parseMessageHook.Enable();
 
             this.Chat.ChatMessage += HandleChatMessage;
@@ -119,7 +119,7 @@ namespace LiteralMapLink
                     {
                         mapName = unmaskedMapNames[mapName];
                     }
-                    var historyKey = mapName + match.Value.Substring(mapName.Length + 1);
+                    var historyKey = string.Concat(mapName, match.Value.AsSpan(mapName.Length + 1));
 
                     uint territoryId, mapId;
                     int rawX, rawY;
@@ -151,12 +151,12 @@ namespace LiteralMapLink
                     var newPayloads = new List<Payload>();
                     if (match.Index > 0)
                     {
-                        newPayloads.Add(new TextPayload(payload.Text.Substring(0, match.Index)));
+                        newPayloads.Add(new TextPayload(payload.Text[..match.Index]));
                     }
                     newPayloads.Add(new PreMapLinkPayload(territoryId, mapId, rawX, rawY));
                     if (match.Index + match.Length < payload.Text.Length)
                     {
-                        newPayloads.Add(new TextPayload(payload.Text.Substring(match.Index + match.Length)));
+                        newPayloads.Add(new TextPayload(payload.Text[(match.Index + match.Length)..]));
                     }
                     parsed.Payloads.RemoveAt(i);
                     parsed.Payloads.InsertRange(i, newPayloads);
@@ -193,8 +193,8 @@ namespace LiteralMapLink
 
                 var territoryId = (uint)territoryTypeIdField.GetValue(payload);
                 var mapId = (uint)mapIdField.GetValue(payload);
-                var historyKey = payloadText.Text.Substring(0, payloadText.Text.LastIndexOf(")") + 1);
-                var mapName = historyKey.Substring(0, historyKey.LastIndexOf("(") - 1);
+                var historyKey = payloadText.Text[..(payloadText.Text.LastIndexOf(")") + 1)];
+                var mapName = historyKey[..(historyKey.LastIndexOf("(") - 1)];
                 if ('\ue0b1' <= mapName[^1] && mapName[^1] <= '\ue0b9')
                 {
                     this.maps[mapName[0..^1]] = (territoryId, mapId);
