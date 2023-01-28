@@ -186,29 +186,36 @@ namespace LiteralMapLink
 
         private void HandleChatMessage(XivChatType type, uint senderId, ref SeString sender, ref SeString message, ref bool isHandled)
         {
-            for (var i = 0; i < message.Payloads.Count; i++)
+            try
             {
-                if (message.Payloads[i] is not MapLinkPayload payload) continue;
-                if (message.Payloads[i + 6] is not TextPayload payloadText) continue;
+                for (var i = 0; i < message.Payloads.Count; i++)
+                {
+                    if (message.Payloads[i] is not MapLinkPayload payload) continue;
+                    if (message.Payloads[i + 6] is not TextPayload payloadText) continue;
 
-                var territoryId = (uint)territoryTypeIdField.GetValue(payload);
-                var mapId = (uint)mapIdField.GetValue(payload);
-                var historyKey = payloadText.Text[..(payloadText.Text.LastIndexOf(")") + 1)];
-                var mapName = historyKey[..(historyKey.LastIndexOf("(") - 1)];
-                if ('\ue0b1' <= mapName[^1] && mapName[^1] <= '\ue0b9')
-                {
-                    this.maps[mapName[0..^1]] = (territoryId, mapId);
-                    mapId |= (mapName[^1] - 0xe0b0u) << 16;
+                    var territoryId = (uint)territoryTypeIdField.GetValue(payload);
+                    var mapId = (uint)mapIdField.GetValue(payload);
+                    var historyKey = payloadText.Text[..(payloadText.Text.LastIndexOf(")") + 1)];
+                    var mapName = historyKey[..(historyKey.LastIndexOf("(") - 1)];
+                    if ('\ue0b1' <= mapName[^1] && mapName[^1] <= '\ue0b9')
+                    {
+                        this.maps[mapName[0..^1]] = (territoryId, mapId);
+                        mapId |= (mapName[^1] - 0xe0b0u) << 16;
+                    }
+                    else
+                    {
+                        this.maps[mapName] = (territoryId, mapId);
+                    }
+                    var history = (territoryId, mapId, payload.RawX, payload.RawY);
+                    this.historyCoordinates[historyKey] = history;
+                    PluginLog.Log("memorize {0} => {1}", historyKey, history);
+                    //PluginLog.Log(BitConverter.ToString(payload.Encode()));
+                    //PluginLog.Log(BitConverter.ToString(payload.Encode(true)));
                 }
-                else
-                {
-                    this.maps[mapName] = (territoryId, mapId);
-                }
-                var history = (territoryId, mapId, payload.RawX, payload.RawY);
-                this.historyCoordinates[historyKey] = history;
-                PluginLog.Log("memorize {0} => {1}", historyKey, history);
-                //PluginLog.Log(BitConverter.ToString(payload.Encode()));
-                //PluginLog.Log(BitConverter.ToString(payload.Encode(true)));
+            }
+            catch (Exception ex)
+            {
+                PluginLog.Debug(ex, "Exception on HandleChatMessage.");
             }
         }
 
