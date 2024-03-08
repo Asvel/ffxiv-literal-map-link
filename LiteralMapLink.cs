@@ -3,16 +3,13 @@ using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using System.Runtime.InteropServices;
 using System.Reflection;
-using Dalamud.Data;
-using Dalamud.Game;
-using Dalamud.Game.Gui;
 using Dalamud.Game.Text;
 using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Game.Text.SeStringHandling.Payloads;
 using Dalamud.Hooking;
 using Dalamud.IoC;
-using Dalamud.Logging;
 using Dalamud.Plugin;
+using Dalamud.Plugin.Services;
 using Lumina.Excel.GeneratedSheets;
 
 namespace LiteralMapLink
@@ -25,15 +22,19 @@ namespace LiteralMapLink
 
         [PluginService]
         [RequiredVersion("1.0")]
-        private SigScanner SigScanner { get; init; }
+        private IGameInteropProvider GameInteropProvider { get; init; }
 
         [PluginService]
         [RequiredVersion("1.0")]
-        private ChatGui Chat { get; init; }
+        private IChatGui Chat { get; init; }
 
         [PluginService]
         [RequiredVersion("1.0")]
-        private DataManager Data { get; init; }
+        private IDataManager Data { get; init; }
+
+        [PluginService]
+        [RequiredVersion("1.0")]
+        private IPluginLog PluginLog { get; init; }
 
         [UnmanagedFunctionPointer(CallingConvention.ThisCall)]
         private delegate IntPtr ParseMessageDelegate(IntPtr a, IntPtr b);
@@ -67,13 +68,10 @@ namespace LiteralMapLink
 
         private readonly Dictionary<string, (uint, uint, int, int)> historyCoordinates = new();
 
-        public string Name => "Literal Map Link";
-
         public LiteralMapLink()
         {
-            var parseMessageAddress = this.SigScanner.ScanText(
-                "E8 ???????? 48 8B D0 48 8D 4C 24 30 E8 ???????? 48 8B 44 24 30 80 38 00 0F 84");
-            this.parseMessageHook = Hook<ParseMessageDelegate>.FromAddress(parseMessageAddress, new(HandleParseMessageDetour));
+            this.parseMessageHook = GameInteropProvider.HookFromSignature<ParseMessageDelegate>(
+                "E8 ???????? 48 8B D0 48 8D 4C 24 30 E8 ???????? 48 8B 44 24 30 80 38 00 0F 84", HandleParseMessageDetour);
             this.parseMessageHook.Enable();
 
             this.Chat.ChatMessage += HandleChatMessage;
@@ -104,7 +102,7 @@ namespace LiteralMapLink
                 {
                     if (payload is AutoTranslatePayload p && p.Encode()[3] == 0xC9 && p.Encode()[4] == 0x04)
                     {
-                        if (this.PluginInterface.IsDebugging) PluginLog.Log("<- {0}", BitConverter.ToString(message));
+                        if (this.PluginInterface.IsDebugging) PluginLog.Info("<- {0}", BitConverter.ToString(message));
                         return ret;
                     }
                 }
@@ -126,7 +124,7 @@ namespace LiteralMapLink
                     if (this.historyCoordinates.TryGetValue(historyKey, out var history))
                     {
                         (territoryId, mapId, rawX, rawY) = history;
-                        PluginLog.Log("recall {0} => {1}", historyKey, history);
+                        PluginLog.Info("recall {0} => {1}", historyKey, history);
                     }
                     else
                     {
@@ -145,7 +143,7 @@ namespace LiteralMapLink
                         }
                         history = (territoryId, mapId, rawX, rawY);
                         this.historyCoordinates[historyKey] = history;
-                        PluginLog.Log("generate {0} => {1}", historyKey, history);
+                        PluginLog.Info("generate {0} => {1}", historyKey, history);
                     }
 
                     var newPayloads = new List<Payload>();
@@ -162,12 +160,12 @@ namespace LiteralMapLink
                     parsed.Payloads.InsertRange(i, newPayloads);
 
                     var newMessage = parsed.Encode();
-                    if (this.PluginInterface.IsDebugging) PluginLog.Log("-> {0}", BitConverter.ToString(newMessage));
+                    if (this.PluginInterface.IsDebugging) PluginLog.Info("-> {0}", BitConverter.ToString(newMessage));
                     var messageCapacity = Marshal.ReadInt64(ret + 8);
                     if (newMessage.Length + 1 > messageCapacity)
                     {
                         // FIXME: should call std::string#resize(or maybe _Reallocate_grow_by) here, but haven't found the signature yet
-                        PluginLog.LogError("Sorry, message capacity not enough, abort conversion for {0}", historyKey);
+                        PluginLog.Error("Sorry, message capacity not enough, abort conversion for {0}", historyKey);
                         return ret;
                     }
                     Marshal.WriteInt64(ret + 16, newMessage.Length + 1);
@@ -208,9 +206,9 @@ namespace LiteralMapLink
                     }
                     var history = (territoryId, mapId, payload.RawX, payload.RawY);
                     this.historyCoordinates[historyKey] = history;
-                    PluginLog.Log("memorize {0} => {1}", historyKey, history);
-                    //PluginLog.Log(BitConverter.ToString(payload.Encode()));
-                    //PluginLog.Log(BitConverter.ToString(payload.Encode(true)));
+                    PluginLog.Info("memorize {0} => {1}", historyKey, history);
+                    //PluginLog.Info(BitConverter.ToString(payload.Encode()));
+                    //PluginLog.Info(BitConverter.ToString(payload.Encode(true)));
                 }
             }
             catch (Exception ex)
