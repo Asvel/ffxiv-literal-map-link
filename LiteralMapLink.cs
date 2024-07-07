@@ -17,23 +17,18 @@ namespace LiteralMapLink
     public class LiteralMapLink : IDalamudPlugin
     {
         [PluginService]
-        [RequiredVersion("1.0")]
-        private DalamudPluginInterface PluginInterface { get; init; }
+        private IDalamudPluginInterface PluginInterface { get; init; }
 
         [PluginService]
-        [RequiredVersion("1.0")]
         private IGameInteropProvider GameInteropProvider { get; init; }
 
         [PluginService]
-        [RequiredVersion("1.0")]
         private IChatGui Chat { get; init; }
 
         [PluginService]
-        [RequiredVersion("1.0")]
         private IDataManager Data { get; init; }
 
         [PluginService]
-        [RequiredVersion("1.0")]
         private IPluginLog PluginLog { get; init; }
 
         [UnmanagedFunctionPointer(CallingConvention.ThisCall)]
@@ -182,7 +177,7 @@ namespace LiteralMapLink
             return ret;
         }
 
-        private void HandleChatMessage(XivChatType type, uint senderId, ref SeString sender, ref SeString message, ref bool isHandled)
+        private void HandleChatMessage(XivChatType type, int timestamp, ref SeString sender, ref SeString message, ref bool isHandled)
         {
             try
             {
