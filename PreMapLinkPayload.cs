@@ -32,7 +32,7 @@ namespace LiteralMapLink
             var yBytes = MakeInteger(unchecked((uint)this.rawY));
             var zBytes = MakeInteger(unchecked((uint)this.rawZ));
 
-            var chunkLen = 3 + territoryBytes.Length + mapBytes.Length + xBytes.Length + yBytes.Length + zBytes.Length;
+            var chunkLen = 4 + territoryBytes.Length + mapBytes.Length + xBytes.Length + yBytes.Length + zBytes.Length;
 
             var bytes = new List<byte>()
             {
@@ -44,6 +44,7 @@ namespace LiteralMapLink
             bytes.AddRange(xBytes);
             bytes.AddRange(yBytes);
             bytes.AddRange(zBytes);
+            bytes.Add(0x01);  // FIXME: what is this?
             bytes.Add(END_BYTE);
 
             return bytes.ToArray();
