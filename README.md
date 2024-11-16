@@ -8,8 +8,6 @@ This is a third party plugin of FFXIV plugin framework [Dalamud](https://github.
 
 </details>
 
-**WARNING: currently it's only tested under Chinese version FFXIV client.**
-
 ## Installation
 
 Add `https://asvel.github.io/ffxiv-literal-map-link/` to the Custom Plugin Repositories list in Dalamud Settings, and install "Literal Map Link" from Plugin Installer.
