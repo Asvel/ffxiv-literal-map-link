@@ -10,7 +10,7 @@ using Dalamud.Hooking;
 using Dalamud.IoC;
 using Dalamud.Plugin;
 using Dalamud.Plugin.Services;
-using Lumina.Excel.GeneratedSheets;
+using Lumina.Excel.Sheets;
 
 namespace LiteralMapLink
 {
@@ -73,10 +73,10 @@ namespace LiteralMapLink
 
             foreach (var territoryType in this.Data.GetExcelSheet<TerritoryType>())
             {
-                var name = territoryType.PlaceName.Value.Name.RawString;
+                var name = territoryType.PlaceName.Value.Name.ToString();
                 if (name != "" && !this.maps.ContainsKey(name))
                 {
-                    this.maps.Add(name, (territoryType.RowId, territoryType.Map.Row));
+                    this.maps.Add(name, (territoryType.RowId, territoryType.Map.RowId));
                 }
             }
         }
