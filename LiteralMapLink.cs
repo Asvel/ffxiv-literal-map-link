@@ -73,7 +73,7 @@ namespace LiteralMapLink
 
             foreach (var territoryType in this.Data.GetExcelSheet<TerritoryType>())
             {
-                var name = territoryType.PlaceName.Value.Name.ToString();
+                var name = territoryType.PlaceName.Value.Name.ExtractText();
                 if (name != "" && !this.maps.ContainsKey(name))
                 {
                     this.maps.Add(name, (territoryType.RowId, territoryType.Map.RowId));
