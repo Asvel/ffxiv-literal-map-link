@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using System.Runtime.InteropServices;
 using System.Reflection;
+using System.Globalization;
 using Dalamud.Game.Text;
 using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Game.Text.SeStringHandling.Payloads;
@@ -130,8 +131,8 @@ namespace LiteralMapLink
                         }
                         (territoryId, mapId) = mapInfo;
                         var map = this.Data.GetExcelSheet<Map>().GetRow(mapId);
-                        rawX = this.GenerateRawPosition(float.Parse(match.Groups["x"].Value), map.OffsetX, map.SizeFactor);
-                        rawY = this.GenerateRawPosition(float.Parse(match.Groups["y"].Value), map.OffsetY, map.SizeFactor);
+                        rawX = this.GenerateRawPosition(float.Parse(match.Groups["x"].Value, CultureInfo.InvariantCulture), map.OffsetX, map.SizeFactor);
+                        rawY = this.GenerateRawPosition(float.Parse(match.Groups["y"].Value, CultureInfo.InvariantCulture), map.OffsetY, map.SizeFactor);
                         if (match.Groups["instance"].Value != "")
                         {
                             mapId |= (match.Groups["instance"].Value[0] - 0xe0b0u) << 16;
