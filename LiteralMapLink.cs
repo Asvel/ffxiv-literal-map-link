@@ -67,7 +67,7 @@ namespace LiteralMapLink
         public LiteralMapLink()
         {
             this.parseMessageHook = GameInteropProvider.HookFromSignature<ParseMessageDelegate>(
-                "E8 ???????? 48 8B D0 48 8D 4C 24 30 E8 ???????? 48 8B 44 24 30 80 38 00 0F 84", HandleParseMessageDetour);
+                "E8 ???????? 48 8B D0 48 8D 4C 24 30 E8 ???????? 48 85 FF 0F 84 ???????? 48 8B 44 24 30 80 38 00 0F 84", HandleParseMessageDetour);
             this.parseMessageHook.Enable();
 
             this.Chat.ChatMessage += HandleChatMessage;
