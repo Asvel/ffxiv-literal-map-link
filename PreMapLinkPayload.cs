@@ -5,24 +5,15 @@ using Dalamud.Game.Text.SeStringHandling;
 
 namespace LiteralMapLink
 {
-    public class PreMapLinkPayload : Payload
+    public class PreMapLinkPayload(uint territoryTypeId, uint mapId, int rawX, int rawY) : Payload
     {
         public override PayloadType Type => PayloadType.AutoTranslateText;
 
-        private readonly uint territoryTypeId;
-        private readonly uint mapId;
-        private readonly int rawX;
-        private readonly int rawY;
-        private readonly int rawZ;
-
-        public PreMapLinkPayload(uint territoryTypeId, uint mapId, int rawX, int rawY)
-        {
-            this.territoryTypeId = territoryTypeId;
-            this.mapId = mapId;
-            this.rawX = rawX;
-            this.rawY = rawY;
-            this.rawZ = -30000;
-        }
+        private readonly uint territoryTypeId = territoryTypeId;
+        private readonly uint mapId = mapId;
+        private readonly int rawX = rawX;
+        private readonly int rawY = rawY;
+        private readonly int rawZ = -30000;
 
         protected override byte[] EncodeImpl()
         {
@@ -47,7 +38,7 @@ namespace LiteralMapLink
             bytes.Add(0x01);  // FIXME: what is this?
             bytes.Add(END_BYTE);
 
-            return bytes.ToArray();
+            return [.. bytes];
         }
 
         protected override void DecodeImpl(BinaryReader reader, long endOfStream)

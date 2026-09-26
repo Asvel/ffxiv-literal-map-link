@@ -4,7 +4,7 @@ using System.Text.RegularExpressions;
 using System.Runtime.InteropServices;
 using System.Reflection;
 using System.Globalization;
-using Dalamud.Game.Text;
+using Dalamud.Game.Chat;
 using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Game.Text.SeStringHandling.Payloads;
 using Dalamud.Hooking;
@@ -15,7 +15,7 @@ using Lumina.Excel.Sheets;
 
 namespace LiteralMapLink
 {
-    public class LiteralMapLink : IDalamudPlugin
+    public partial class LiteralMapLink : IDalamudPlugin
     {
         [PluginService]
         private IDalamudPluginInterface PluginInterface { get; init; }
@@ -36,7 +36,7 @@ namespace LiteralMapLink
         private delegate IntPtr ParseMessageDelegate(IntPtr a, IntPtr b);
         private readonly Hook<ParseMessageDelegate> parseMessageHook;
 
-        private readonly Dictionary<string, (uint, uint)> maps = new();
+        private readonly Dictionary<string, (uint, uint)> maps = [];
         private readonly Dictionary<string, string> unmaskedMapNames = new()
         {
             { "狼狱演*场", "狼狱演习场" },
@@ -53,16 +53,15 @@ namespace LiteralMapLink
             { "游末邦**", "游末邦监狱" },
         };
 
-        private readonly Regex mapLinkPattern = new(
-            @"\uE0BB(?<map>.+?)(?<instance>[\ue0b1-\ue0b9])? \( (?<x>\d{1,2}\.\d)  , (?<y>\d{1,2}\.\d) \)",
-            RegexOptions.Compiled);
+        [GeneratedRegex(@"\uE0BB(?<map>.+?)(?<instance>[\ue0b1-\ue0b9])? \( (?<x>\d{1,2}\.\d)  , (?<y>\d{1,2}\.\d) \)")]
+        private static partial Regex mapLinkPattern { get; }
 
         private readonly FieldInfo territoryTypeIdField = typeof(MapLinkPayload).GetField("territoryTypeId",
             BindingFlags.NonPublic | BindingFlags.Instance);
         private readonly FieldInfo mapIdField = typeof(MapLinkPayload).GetField("mapId",
             BindingFlags.NonPublic | BindingFlags.Instance);
 
-        private readonly Dictionary<string, (uint, uint, int, int)> historyCoordinates = new();
+        private readonly Dictionary<string, (uint, uint, int, int)> historyCoordinates = [];
 
         public LiteralMapLink()
         {
@@ -109,9 +108,9 @@ namespace LiteralMapLink
                     if (!match.Success) continue;
 
                     var mapName = match.Groups["map"].Value;
-                    if (unmaskedMapNames.ContainsKey(mapName))
+                    if (unmaskedMapNames.TryGetValue(mapName, out var unmasked))
                     {
-                        mapName = unmaskedMapNames[mapName];
+                        mapName = unmasked;
                     }
                     var historyKey = string.Concat(mapName, match.Value.AsSpan(mapName.Length + 1));
 
@@ -178,19 +177,19 @@ namespace LiteralMapLink
             return ret;
         }
 
-        private void HandleChatMessage(XivChatType type, int timestamp, ref SeString sender, ref SeString message, ref bool isHandled)
+        private void HandleChatMessage(IHandleableChatMessage message)
         {
             try
             {
-                for (var i = 0; i < message.Payloads.Count; i++)
+                for (var i = 0; i < message.Message.Payloads.Count; i++)
                 {
-                    if (message.Payloads[i] is not MapLinkPayload payload) continue;
-                    if (message.Payloads[i + 6] is not TextPayload payloadText) continue;
+                    if (message.Message.Payloads[i] is not MapLinkPayload payload) continue;
+                    if (message.Message.Payloads[i + 6] is not TextPayload payloadText) continue;
 
                     var territoryId = (uint)territoryTypeIdField.GetValue(payload);
                     var mapId = (uint)mapIdField.GetValue(payload);
-                    var historyKey = payloadText.Text[..(payloadText.Text.LastIndexOf(")") + 1)];
-                    var mapName = historyKey[..(historyKey.LastIndexOf("(") - 1)];
+                    var historyKey = payloadText.Text[..(payloadText.Text.LastIndexOf(')') + 1)];
+                    var mapName = historyKey[..(historyKey.LastIndexOf('(') - 1)];
                     if ('\ue0b1' <= mapName[^1] && mapName[^1] <= '\ue0b9')
                     {
                         this.maps[mapName[0..^1]] = (territoryId, mapId);

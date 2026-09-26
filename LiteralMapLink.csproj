@@ -1,48 +1,21 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
-
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project Sdk="Dalamud.NET.Sdk/15.0.0">
   <PropertyGroup>
-    <TargetFramework>net10.0-windows</TargetFramework>
-    <LangVersion>10.0</LangVersion>
-    <AssemblyVersion>1.2.0.0</AssemblyVersion>
-    <FileVersion>1.2.0.0</FileVersion>
-  </PropertyGroup>
+    <Version>1.3.0.0</Version>
+    <Author>Asvel</Author>
+    <Name>Literal Map Link</Name>
+    <Punchline>Turn map coordinates literal into interactable map link.</Punchline>
+    <Description>
+      Turn map coordinates literal into interactable map link when you post in-game chat messages.
+    </Description>
+    <RepoUrl>https://github.com/Asvel/ffxiv-literal-map-link</RepoUrl>
+    <Tags>utility;social</Tags>
 
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+    <Nullable>disable</Nullable>
+  </PropertyGroup>
+  
+  <PropertyGroup Condition="'$(Configuration)'=='Release'">
     <DebugType>none</DebugType>
     <DebugSymbols>false</DebugSymbols>
   </PropertyGroup>
-
-  <PropertyGroup>
-    <ProduceReferenceAssembly>false</ProduceReferenceAssembly>
-    <PlatformTarget>x64</PlatformTarget>
-  </PropertyGroup>
-
-  <ItemGroup>
-    <PackageReference Include="DalamudPackager" Version="14.0.2" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Reference Include="Dalamud">
-      <HintPath Condition="Exists('$(DalamudLibPath)')">$(DalamudLibPath)\Dalamud.dll</HintPath>
-      <HintPath Condition="Exists('$(DalamudHooks)')">$(DalamudHooks)\Dalamud.dll</HintPath>
-      <HintPath Condition="Exists('..\Dalamud\bin\Debug')">..\Dalamud\bin\Debug\Dalamud.dll</HintPath>
-      <HintPath Condition="Exists('..\..\Dalamud\bin\Debug')">..\..\Dalamud\bin\Debug\Dalamud.dll</HintPath>
-      <Private>false</Private>
-    </Reference>
-    <Reference Include="Lumina">
-      <HintPath Condition="Exists('$(DalamudLibPath)')">$(DalamudLibPath)\Lumina.dll</HintPath>
-      <HintPath Condition="Exists('$(DalamudHooks)')">$(DalamudHooks)\Lumina.dll</HintPath>
-      <HintPath Condition="Exists('..\Dalamud\bin\Debug')">..\Dalamud\bin\Debug\Lumina.dll</HintPath>
-      <HintPath Condition="Exists('..\..\Dalamud\bin\Debug')">..\..\Dalamud\bin\Debug\Lumina.dll</HintPath>
-      <Private>false</Private>
-    </Reference>
-    <Reference Include="Lumina.Excel">
-      <HintPath Condition="Exists('$(DalamudLibPath)')">$(DalamudLibPath)\Lumina.Excel.dll</HintPath>
-      <HintPath Condition="Exists('$(DalamudHooks)')">$(DalamudHooks)\Lumina.Excel.dll</HintPath>
-      <HintPath Condition="Exists('..\Dalamud\bin\Debug')">..\Dalamud\bin\Debug\Lumina.Excel.dll</HintPath>
-      <HintPath Condition="Exists('..\..\Dalamud\bin\Debug')">..\..\Dalamud\bin\Debug\Lumina.Excel.dll</HintPath>
-      <Private>false</Private>
-    </Reference>
-  </ItemGroup>
-
 </Project>
